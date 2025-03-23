@@ -364,7 +364,7 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
 
 {/* H3 Resolution Input */}
 <div className="filter-group">
-                <h3 className="filter-group-title">H3 Resolution</h3>
+                <h3 className="filter-group-title">Hexagon Resolution</h3>
                 <div className="filter-section">
                     <div className="numeric-filter-inputs">
                         <div className="numeric-input-group">
@@ -418,7 +418,7 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
                     </div>
                 </div>
             </div>
-            
+
             <div className="filter-actions">
                 <button className="reset-filters-btn" onClick={resetFilters}>
                     Reset
@@ -430,6 +430,36 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
                 >
                     Apply Filters
                 </button>
+                {/* <button
+                    onClick={() => {
+                        onToggle();
+                        (window as any).myMap.easeTo({
+                            center: [8.543937,47.371305], // Longitude, Latitude (Zurich, Switzerland)
+                            zoom: 15,  // Target zoom level
+                            bearing:60, // Rotation angle in degrees
+                            pitch: 60, // Tilt angle in degrees
+                            duration: 3000, // Duration in milliseconds (2 seconds)
+                            easing: (t: number) =>  {return t; },
+                        });
+                    }}
+                >
+                    bicycle 
+                </button>
+                <button
+                    onClick={() => {
+                        onToggle();
+                        (window as any).myMap.easeTo({
+                            center: [8.56048, 47.365], // Longitude, Latitude (Zurich, Switzerland)
+                            zoom: 13,  // Target zoom level
+                            bearing:120.1, // Rotation angle in degrees
+                            pitch: 60, // Tilt angle in degrees
+                            duration: 3000, // Duration in milliseconds (2 seconds)
+                            easing: (t: number) =>  {return t; },
+                        });
+                    }}
+                >
+                    overtaking
+                </button> */}
             </div>
         </div>
     );

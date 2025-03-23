@@ -29,7 +29,7 @@ interface HoverData {
 
 const initialH3Resolution = 11;
 const initialOpacity = 1.0;
-const initialHeightMultiplier = 1.0;
+const initialHeightMultiplier = 10.0;
 
 const h3CellToGeometry = (h3CellId: string) => {
   const boundary = cellToBoundary(h3CellId);
@@ -440,7 +440,7 @@ const App: React.FC = () => {
         });
 
         addColorLegend(map, {
-          title: 'H3 Cell Ratio',
+          title: 'Percentage of cell total',
           position: 'bottom-left',
           width: 250,
           height: 20
@@ -737,7 +737,7 @@ const App: React.FC = () => {
             </div>
             <div className="metadata-content">
               <div className="metadata-item">
-                <span className="metadata-label">Count:</span>
+                <span className="metadata-label">Count (Height):</span>
                 <span className="metadata-value">{hoverData.count}</span>
               </div>
               <div className="metadata-item">

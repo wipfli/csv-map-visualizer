@@ -581,7 +581,6 @@ const App: React.FC = () => {
   };
 
   const fetchCsvFromUrl = async (url: string) => {
-    console.log("fetchCsvFromUrl");
     try {
       setIsLoading(true);
       setError(null);
@@ -597,7 +596,6 @@ const App: React.FC = () => {
       // Create a File object from the Blob
       const fileName = url.split('/').pop() || 'data.csv';
       const file = new File([csvData], fileName, { type: 'text/csv' });
-      console.log('File created:', file);
       
       // Process the file
       await processFile(file);
@@ -616,7 +614,6 @@ const App: React.FC = () => {
       if (db && dbConn) {
         const fileName = file.name.replace('.csv', '').replace(/[^a-zA-Z0-9]/g, '_');
         const generatedTableName = `csv_${fileName}_${Date.now()}`;
-        console.log('Generated table name:', generatedTableName);
   
         const fileBuffer = await file.arrayBuffer();
         await db.registerFileBuffer(file.name, new Uint8Array(fileBuffer));

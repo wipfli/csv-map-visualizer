@@ -1,9 +1,6 @@
 /* App.css */
 
 
-/* Import MapLibre CSS */
-@import url('https://cdn.jsdelivr.net/npm/maplibre-gl@5.2.0/dist/maplibre-gl.css');
-
 /* General Styles */
 * {
   box-sizing: border-box;
@@ -422,6 +419,19 @@ body, html {
 
 .hover-metadata-overlay.visible {
   opacity: 1;
+}
+
+.close-button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  float: right;
+  color: #555;
+}
+
+.close-button:hover {
+  color: #000;
 }
 
 .metadata-header {

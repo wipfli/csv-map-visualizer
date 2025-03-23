@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import * as duckdb from '@duckdb/duckdb-wasm';
-import { AsyncDuckDB } from '@duckdb/duckdb-wasm';
+import { AsyncDuckDB, AsyncDuckDBConnection } from '@duckdb/duckdb-wasm';
 import maplibregl from 'maplibre-gl';
 import FilterOverlay from './FilterOverlay';
 import styleJson from "./assets/style.json";
 import { Protocol } from "pmtiles";
 import { cellToBoundary } from 'h3-js';
+import 'maplibre-gl/dist/maplibre-gl.css';
 
 
 type CategoryFiltersType = {
@@ -148,6 +149,7 @@ function createGradient(steps: number): string {
 
 const App: React.FC = () => {
   const [db, setDb] = useState<AsyncDuckDB | null>(null);
+  const [dbConn, setDbConn] = useState<AsyncDuckDBConnection | null>(null);
   const [isDbReady, setIsDbReady] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -193,12 +195,10 @@ const App: React.FC = () => {
   ): void => {
 
     const query = async () => {
-
-      if (!isDbReady || !db || !tableName) {
+      if (!isDbReady || !db || !dbConn || !tableName) {
         setError('Database or table not ready.');
         return;
       }
-      const conn = await db.connect();
 
       function generateSQLFilterStatement(
         categoryFilters: CategoryFiltersType,
@@ -247,7 +247,7 @@ const App: React.FC = () => {
         ORDER BY total_count DESC;
       `;
 
-      const result = await conn.query(sql);
+      const result = await dbConn.query(sql);
 
       const featureCollection = {
         'type': 'FeatureCollection',
@@ -305,12 +305,9 @@ const App: React.FC = () => {
           map.setPaintProperty(layer, 'fill-extrusion-opacity', opacity);
           map.setPaintProperty(layer, 'fill-extrusion-height', ['*', heightMultiplier, ['get', 'count']]);
         }
-
       }
 
       setShowFilters(true);
-
-      await conn.close();
     }
     query();
   };
@@ -328,6 +325,7 @@ const App: React.FC = () => {
     }
   }, []);
 
+  // Initialize DuckDB and create a persistent connection
   useEffect(() => {
     const initDb = async () => {
       try {
@@ -343,12 +341,16 @@ const App: React.FC = () => {
 
         const worker = new Worker(worker_url);
         const logger = new duckdb.ConsoleLogger("DEBUG" as any);
-        const db = new duckdb.AsyncDuckDB(logger, worker);
+        const database = new duckdb.AsyncDuckDB(logger, worker);
 
-        await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
+        await database.instantiate(bundle.mainModule, bundle.pthreadWorker);
         URL.revokeObjectURL(worker_url);
 
-        setDb(db);
+        // Create a persistent connection
+        const connection = await database.connect();
+        
+        setDb(database);
+        setDbConn(connection);
         setIsDbReady(true);
         setIsLoading(false);
       } catch (err) {
@@ -361,6 +363,10 @@ const App: React.FC = () => {
     initDb();
 
     return () => {
+      // Close the connection and terminate the database when the component unmounts
+      if (dbConn) {
+        dbConn.close().catch(err => console.error('Error closing connection:', err));
+      }
       if (db) {
         db.terminate();
       }
@@ -375,7 +381,6 @@ const App: React.FC = () => {
     };
     getCsv();
   }, [isDbReady, dataUrl]);
-
 
   useEffect(() => {
     if (mapContainerRef.current && !mapRef.current) {
@@ -470,7 +475,6 @@ const App: React.FC = () => {
               ]
             });
           }
-
         }
       });
 
@@ -488,16 +492,15 @@ const App: React.FC = () => {
   }, [mapContainerRef.current]);
 
   useEffect(() => {
-    if (Object.keys(cols).length === 0) {
+    if (Object.keys(cols).length === 0 || !dbConn) {
       return;
     }
-    const query = async () => {
 
-      if (!isDbReady || !db || !tableName) {
+    const fetchCategories = async () => {
+      if (!isDbReady || !dbConn || !tableName) {
         setError('Database or table not ready.');
         return;
       }
-      const conn = await db.connect();
 
       const categoriesTmp: Record<string, string[]> = {};
       for (const colName in cols) {
@@ -507,18 +510,17 @@ const App: React.FC = () => {
         const sql = `
           SELECT DISTINCT ${colName} FROM ${tableName};
         `;
-        const result = await conn.query(sql);
+        const result = await dbConn.query(sql);
         categoriesTmp[colName] = [];
         for (let i = 0; i < result.numRows; i++) {
           categoriesTmp[colName].push(result.getChildAt(0)?.get(i));
         }
       }
       setCategories(categoriesTmp);
+    };
 
-      await conn.close();
-    }
-    query();
-  }, [cols]);
+    fetchCategories();
+  }, [cols, dbConn, isDbReady, tableName]);
 
   useEffect(() => {
     if (Object.keys(categories).length === 0) {
@@ -543,7 +545,7 @@ const App: React.FC = () => {
     e.preventDefault();
     setIsDragging(false);
 
-    if (!isDbReady || !db) {
+    if (!isDbReady || !db || !dbConn) {
       setError('Database not yet initialized. Please wait.');
       return;
     }
@@ -561,7 +563,7 @@ const App: React.FC = () => {
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isDbReady || !db) {
+    if (!isDbReady || !db || !dbConn) {
       setError('Database not yet initialized. Please wait.');
       return;
     }
@@ -579,7 +581,7 @@ const App: React.FC = () => {
   };
 
   const fetchCsvFromUrl = async (url: string) => {
-    console.log("fetchCsvFromUrl")
+    console.log("fetchCsvFromUrl");
     try {
       setIsLoading(true);
       setError(null);
@@ -611,19 +613,20 @@ const App: React.FC = () => {
       setIsLoading(true);
       setError(null);
 
-      if (db) {
+      if (db && dbConn) {
         const fileName = file.name.replace('.csv', '').replace(/[^a-zA-Z0-9]/g, '_');
         const generatedTableName = `csv_${fileName}_${Date.now()}`;
         console.log('Generated table name:', generatedTableName);
   
         const fileBuffer = await file.arrayBuffer();
         await db.registerFileBuffer(file.name, new Uint8Array(fileBuffer));
-        const conn = await db.connect();
-        await conn.query(`
+        
+        await dbConn.query(`
           CREATE TABLE ${generatedTableName} AS 
           SELECT * FROM read_csv_auto('${file.name}')
         `);
-        const columnsResult = await conn.query(`PRAGMA table_info(${generatedTableName})`);
+        
+        const columnsResult = await dbConn.query(`PRAGMA table_info(${generatedTableName})`);
         const columns: string[] = [];
 
         const numColumnsRows = columnsResult.numRows;
@@ -649,11 +652,10 @@ const App: React.FC = () => {
         if (!latColumn || !lonColumn) {
           setError('Could not find lat and lon columns in the CSV file. Please make sure your CSV contains "lat" and "lon" columns.');
           setIsLoading(false);
-          await conn.close();
           return;
         }
 
-        const result = await conn.query(`SELECT * FROM ${generatedTableName}`);
+        const result = await dbConn.query(`SELECT * FROM ${generatedTableName}`);
 
         setTableName(generatedTableName);
         setCols(Object.fromEntries(
@@ -662,10 +664,8 @@ const App: React.FC = () => {
             .map(field => [field.name, String(field.type)])
         ));
 
-        await conn.close();
         setIsLoading(false);
       }
-
     } catch (err) {
       console.error('Error processing CSV file:', err);
       setError(`Error processing CSV file: ${err instanceof Error ? err.message : String(err)}`);
@@ -734,7 +734,10 @@ const App: React.FC = () => {
       <div className={`hover-metadata-overlay ${hoverData ? 'visible' : 'hidden'}`}>
         {hoverData && (
           <>
-            <div className="metadata-header">Hover Details</div>
+            <div className="metadata-header">
+              Hover Details
+              <button className="close-button" onClick={() => setHoverData(null)}>×</button>
+            </div>
             <div className="metadata-content">
               <div className="metadata-item">
                 <span className="metadata-label">Count:</span>

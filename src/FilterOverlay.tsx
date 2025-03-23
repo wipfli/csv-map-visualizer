@@ -295,63 +295,6 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
                 <button className="close-filter-btn" onClick={onToggle}>×</button>
             </div>
 
-            {/* H3 Resolution Input */}
-            <div className="filter-group">
-                <h3 className="filter-group-title">H3 Resolution</h3>
-                <div className="filter-section">
-                    <div className="numeric-filter-inputs">
-                        <div className="numeric-input-group">
-                            <input
-                                type="text"
-                                className={`numeric-input ${h3Error ? 'input-error' : ''}`}
-                                value={h3Resolution}
-                                onChange={(e) => handleH3ResolutionChange(e.target.value)}
-                                placeholder="Enter value (1-15)"
-                            />
-                        </div>
-                    </div>
-                    {h3Error && <div className="error-message">{h3Error}</div>}
-                </div>
-            </div>
-
-            {/* Height Multiplier Input */}
-            <div className="filter-group">
-                <h3 className="filter-group-title">Height Multiplier</h3>
-                <div className="filter-section">
-                    <div className="numeric-filter-inputs">
-                        <div className="numeric-input-group">
-                            <input
-                                type="text"
-                                className={`numeric-input ${heightMultiplierError ? 'input-error' : ''}`}
-                                value={heightMultiplier}
-                                onChange={(e) => handleHeightMultiplierChange(e.target.value)}
-                                placeholder="Enter value (≥ 0)"
-                            />
-                        </div>
-                    </div>
-                    {heightMultiplierError && <div className="error-message">{heightMultiplierError}</div>}
-                </div>
-            </div>
-
-            {/* Opacity Slider */}
-            <div className="filter-group">
-                <h3 className="filter-group-title">Opacity</h3>
-                <div className="filter-section">
-                    <div className="opacity-slider-container">
-                        <input
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={opacity ? opacity : 1.0}
-                            onChange={handleOpacityChange}
-                            className="opacity-slider"
-                        />
-                        <div className="opacity-value">{opacity.toFixed(2)}</div>
-                    </div>
-                </div>
-            </div>
-
             {/* Category Filters */}
             {Object.keys(categoryFilters).length > 0 && (
                 <div className="filter-group">
@@ -419,6 +362,63 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
                 </div>
             )}
 
+{/* H3 Resolution Input */}
+<div className="filter-group">
+                <h3 className="filter-group-title">H3 Resolution</h3>
+                <div className="filter-section">
+                    <div className="numeric-filter-inputs">
+                        <div className="numeric-input-group">
+                            <input
+                                type="text"
+                                className={`numeric-input ${h3Error ? 'input-error' : ''}`}
+                                value={h3Resolution}
+                                onChange={(e) => handleH3ResolutionChange(e.target.value)}
+                                placeholder="Enter value (1-15)"
+                            />
+                        </div>
+                    </div>
+                    {h3Error && <div className="error-message">{h3Error}</div>}
+                </div>
+            </div>
+
+            {/* Height Multiplier Input */}
+            <div className="filter-group">
+                <h3 className="filter-group-title">Height Multiplier</h3>
+                <div className="filter-section">
+                    <div className="numeric-filter-inputs">
+                        <div className="numeric-input-group">
+                            <input
+                                type="text"
+                                className={`numeric-input ${heightMultiplierError ? 'input-error' : ''}`}
+                                value={heightMultiplier}
+                                onChange={(e) => handleHeightMultiplierChange(e.target.value)}
+                                placeholder="Enter value (≥ 0)"
+                            />
+                        </div>
+                    </div>
+                    {heightMultiplierError && <div className="error-message">{heightMultiplierError}</div>}
+                </div>
+            </div>
+
+            {/* Opacity Slider */}
+            <div className="filter-group">
+                <h3 className="filter-group-title">Opacity</h3>
+                <div className="filter-section">
+                    <div className="opacity-slider-container">
+                        <input
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.01"
+                            value={opacity ? opacity : 1.0}
+                            onChange={handleOpacityChange}
+                            className="opacity-slider"
+                        />
+                        <div className="opacity-value">{opacity.toFixed(2)}</div>
+                    </div>
+                </div>
+            </div>
+            
             <div className="filter-actions">
                 <button className="reset-filters-btn" onClick={resetFilters}>
                     Reset

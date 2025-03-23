@@ -169,6 +169,7 @@ const App: React.FC = () => {
   const [, setActiveNumericFilters] = useState<NumericFiltersType>(numericFilters);
 
   const [hoverData, setHoverData] = useState<HoverData | null>(null);
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
 
   // Handle filter changes
   const handleFilterChange = (
@@ -318,6 +319,15 @@ const App: React.FC = () => {
     setShowFilters(!showFilters);
   };
 
+  // Parse URL parameters
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const urlData = params.get('data');
+    if (urlData) {
+      setDataUrl(urlData);
+    }
+  }, []);
+
   useEffect(() => {
     const initDb = async () => {
       try {
@@ -356,6 +366,15 @@ const App: React.FC = () => {
       }
     };
   }, []);
+
+  useEffect(() => {
+    const getCsv = async () => {
+      if (dataUrl && isDbReady) {
+        await fetchCsvFromUrl(dataUrl);
+      }
+    };
+    getCsv();
+  }, [isDbReady, dataUrl]);
 
 
   useEffect(() => {
@@ -421,6 +440,10 @@ const App: React.FC = () => {
           width: 250,
           height: 20
         });
+
+        map.setVerticalFieldOfView(10);
+
+        (window as any).myMap = map;
       });
 
       map.on('mousemove', 'h3', (e) => {
@@ -555,18 +578,45 @@ const App: React.FC = () => {
     await processFile(file);
   };
 
+  const fetchCsvFromUrl = async (url: string) => {
+    console.log("fetchCsvFromUrl")
+    try {
+      setIsLoading(true);
+      setError(null);
+  
+      // Fetch the CSV file from the URL
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch CSV: ${response.status} ${response.statusText}`);
+      }
+  
+      const csvData = await response.blob();
+      
+      // Create a File object from the Blob
+      const fileName = url.split('/').pop() || 'data.csv';
+      const file = new File([csvData], fileName, { type: 'text/csv' });
+      console.log('File created:', file);
+      
+      // Process the file
+      await processFile(file);
+    } catch (err) {
+      console.error('Error fetching CSV from URL:', err);
+      setError(`Error fetching CSV from URL: ${err instanceof Error ? err.message : String(err)}`);
+      setIsLoading(false);
+    }
+  };
+
   const processFile = async (file: File) => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const fileName = file.name.replace('.csv', '').replace(/[^a-zA-Z0-9]/g, '_');
-      const generatedTableName = `csv_${fileName}_${Date.now()}`;
-      setTableName(generatedTableName);
-
-      const fileBuffer = await file.arrayBuffer();
-
       if (db) {
+        const fileName = file.name.replace('.csv', '').replace(/[^a-zA-Z0-9]/g, '_');
+        const generatedTableName = `csv_${fileName}_${Date.now()}`;
+        console.log('Generated table name:', generatedTableName);
+  
+        const fileBuffer = await file.arrayBuffer();
         await db.registerFileBuffer(file.name, new Uint8Array(fileBuffer));
         const conn = await db.connect();
         await conn.query(`
@@ -605,6 +655,7 @@ const App: React.FC = () => {
 
         const result = await conn.query(`SELECT * FROM ${generatedTableName}`);
 
+        setTableName(generatedTableName);
         setCols(Object.fromEntries(
           result.schema.fields
             .filter(field => !['lat', 'lon'].includes(field.name))
@@ -612,9 +663,9 @@ const App: React.FC = () => {
         ));
 
         await conn.close();
+        setIsLoading(false);
       }
 
-      setIsLoading(false);
     } catch (err) {
       console.error('Error processing CSV file:', err);
       setError(`Error processing CSV file: ${err instanceof Error ? err.message : String(err)}`);
@@ -638,7 +689,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {!tableName && !isLoading && (
+      {!tableName && !isLoading && !dataUrl && (
         <div
           className={`drop-zone ${isDragging ? 'dragging' : ''}`}
           onClick={handleDropZoneClick}
@@ -657,7 +708,9 @@ const App: React.FC = () => {
             onChange={handleFileSelect}
           />
           <p className="drop-text">Drag & drop a CSV file here, or click to select</p>
-          <p className="note-text">Please ensure your CSV file has latitude and longitude columns (named lat and lon)</p>
+          <p className="note-text">Please ensure your CSV file has latitude and longitude columns (named lat and lon).</p>
+          <p className="note-text">You can also load a CSV by adding</p>
+          <p className="note-text">?data=https://example.com/my-file.csv to the URL.</p>
         </div>
       )}
 

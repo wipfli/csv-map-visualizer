@@ -28,6 +28,7 @@ interface HoverData {
 
 const initialH3Resolution = 11;
 const initialOpacity = 1.0;
+const initialHeightMultiplier = 1.0;
 
 const h3CellToGeometry = (h3CellId: string) => {
   const boundary = cellToBoundary(h3CellId);
@@ -175,10 +176,11 @@ const App: React.FC = () => {
     newNumericFilters: NumericFiltersType,
     h3Resolution: number,
     opacity: number,
+    heightMultiplier: number,
   ): void => {
     setActiveFilterCategories(newCategoryFilters);
     setActiveNumericFilters(newNumericFilters);
-    applyFiltersToMap(newCategoryFilters, newNumericFilters, h3Resolution, opacity);
+    applyFiltersToMap(newCategoryFilters, newNumericFilters, h3Resolution, opacity, heightMultiplier);
   };
 
   const applyFiltersToMap = (
@@ -186,6 +188,7 @@ const App: React.FC = () => {
     numericFilterCriteria: NumericFiltersType,
     h3Resolution: number,
     opacity: number,
+    heightMultiplier: number,
   ): void => {
 
     const query = async () => {
@@ -296,7 +299,12 @@ const App: React.FC = () => {
           );
           map.fitBounds(bounds, { padding: 50 });
         }
-        map.setPaintProperty('h3', 'fill-opacity', opacity);
+        const layers: string[] = ["h3", "h3-hover"];
+        for (const layer of layers) {
+          map.setPaintProperty(layer, 'fill-extrusion-opacity', opacity);
+          map.setPaintProperty(layer, 'fill-extrusion-height', ['*', heightMultiplier, ['get', 'count']]);
+        }
+
       }
 
       setShowFilters(true);
@@ -381,10 +389,10 @@ const App: React.FC = () => {
         map.addLayer({
           id: 'h3',
           source: 'h3',
-          type: 'fill',
+          type: 'fill-extrusion',
           paint: {
-            'fill-color': ['get', 'color'],
-            'fill-opacity': 1.0
+            'fill-extrusion-color': ['get', 'color'],
+            'fill-extrusion-height': ['*', initialHeightMultiplier, ['get', 'count']]
           }
         })
 
@@ -400,9 +408,10 @@ const App: React.FC = () => {
         map.addLayer({
           id: 'h3-hover',
           source: 'h3-hover',
-          type: 'fill',
+          type: 'fill-extrusion',
           paint: {
-            'fill-color': '#FF9900'
+            'fill-extrusion-color': '#FF9900',
+            'fill-extrusion-height': ['*', initialHeightMultiplier, ['get', 'count']]
           }
         });
 
@@ -429,7 +438,10 @@ const App: React.FC = () => {
               'features': [
                 {
                   'type': 'Feature',
-                  'properties': {},
+                  'properties': {
+                    count: feature.properties.count,
+                    totalCount: feature.properties.totalCount,
+                  },
                   'geometry': h3CellToGeometry(feature.properties.h3Cell),
                 }
               ]
@@ -501,7 +513,7 @@ const App: React.FC = () => {
       }
     }
     setNumericFilters(numericFiltersTmp);
-    applyFiltersToMap(categories, numericFiltersTmp, initialH3Resolution, initialOpacity);
+    applyFiltersToMap(categories, numericFiltersTmp, initialH3Resolution, initialOpacity, initialHeightMultiplier);
   }, [categories]);
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
@@ -663,6 +675,7 @@ const App: React.FC = () => {
         onToggle={toggleFilters}
         initialH3Resolution={initialH3Resolution}
         initialOpacity={initialOpacity}
+        initialHeightMultiplier={initialHeightMultiplier}
       />
 
       <div className={`hover-metadata-overlay ${hoverData ? 'visible' : 'hidden'}`}>

@@ -33,12 +33,14 @@ interface FilterOverlayProps {
         categoryFilters: CategoryFiltersType,
         numericFilters: NumericFiltersType,
         h3Resolution: number,
-        opacity: number
+        opacity: number,
+        heightMultiplier: number
     ) => void;
     isOpen: boolean;
     onToggle: () => void;
     initialH3Resolution: number;
     initialOpacity: number;
+    initialHeightMultiplier: number;
 }
 
 const FilterOverlay: React.FC<FilterOverlayProps> = ({
@@ -49,12 +51,15 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
     onToggle,
     initialH3Resolution,
     initialOpacity,
+    initialHeightMultiplier,
 }) => {
     const [selectedCategoryFilters, setSelectedCategoryFilters] = useState<SelectedFiltersType>({});
     const [selectedNumericFilters, setSelectedNumericFilters] = useState<SelectedNumericFiltersType>({});
     const [h3Resolution, setH3Resolution] = useState<string>(String(initialH3Resolution));
     const [opacity, setOpacity] = useState<number>(initialOpacity);
+    const [heightMultiplier, setHeightMultiplier] = useState<string>(String(initialHeightMultiplier));
     const [h3Error, setH3Error] = useState<string>('');
+    const [heightMultiplierError, setHeightMultiplierError] = useState<string>('');
 
     // Initialize selected category filters
     useEffect(() => {
@@ -95,6 +100,13 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
     useEffect(() => {
         setOpacity(initialOpacity);
     }, [initialOpacity]);
+
+    // Initialize heightMultiplier from props
+    useEffect(() => {
+        if (initialHeightMultiplier !== null) {
+            setHeightMultiplier(String(initialHeightMultiplier));
+        }
+    }, [initialHeightMultiplier]);
 
     // Handle checkbox changes
     const handleCheckboxChange = (category: string, value: string): void => {
@@ -145,6 +157,26 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
         }
     };
 
+    // Handle height multiplier input change
+    const handleHeightMultiplierChange = (value: string): void => {
+        // Only allow non-negative float values
+        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+            setHeightMultiplier(value);
+
+            // Validate if entered
+            if (value !== '') {
+                const numValue = parseFloat(value);
+                if (numValue < 0) {
+                    setHeightMultiplierError('Height multiplier must be greater than or equal to 0');
+                } else {
+                    setHeightMultiplierError('');
+                }
+            } else {
+                setHeightMultiplierError('');
+            }
+        }
+    };
+
     // Handle opacity slider change
     const handleOpacityChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
         const value = parseFloat(event.target.value);
@@ -153,8 +185,8 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
 
     // Apply filters
     const applyFilters = (): void => {
-        // Validate H3 resolution
-        if (h3Resolution !== '' && h3Error) {
+        // Validate H3 resolution and heightMultiplier
+        if ((h3Resolution !== '' && h3Error) || (heightMultiplier !== '' && heightMultiplierError)) {
             return; // Don't apply if there's an error
         }
 
@@ -189,7 +221,13 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
             };
         });
 
-        onFilterChange(activeCategoryFilters, activeNumericFilters, parseInt(h3Resolution, 10), opacity);
+        onFilterChange(
+            activeCategoryFilters, 
+            activeNumericFilters, 
+            parseInt(h3Resolution, 10), 
+            opacity,
+            parseFloat(heightMultiplier) || 0,
+        );
     };
 
     // Reset all filters
@@ -225,8 +263,18 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
         // Reset opacity
         setOpacity(initialOpacity);
 
+        // Reset height multiplier
+        setHeightMultiplier(String(initialHeightMultiplier));
+        setHeightMultiplierError('');
+
         // Apply the reset
-        onFilterChange(categoryFilters, numericFilters, initialH3Resolution, initialOpacity);
+        onFilterChange(
+            categoryFilters, 
+            numericFilters, 
+            initialH3Resolution, 
+            initialOpacity,
+            initialHeightMultiplier
+        );
     };
 
     if (!isOpen) {
@@ -263,6 +311,25 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
                         </div>
                     </div>
                     {h3Error && <div className="error-message">{h3Error}</div>}
+                </div>
+            </div>
+
+            {/* Height Multiplier Input */}
+            <div className="filter-group">
+                <h3 className="filter-group-title">Height Multiplier</h3>
+                <div className="filter-section">
+                    <div className="numeric-filter-inputs">
+                        <div className="numeric-input-group">
+                            <input
+                                type="text"
+                                className={`numeric-input ${heightMultiplierError ? 'input-error' : ''}`}
+                                value={heightMultiplier}
+                                onChange={(e) => handleHeightMultiplierChange(e.target.value)}
+                                placeholder="Enter value (≥ 0)"
+                            />
+                        </div>
+                    </div>
+                    {heightMultiplierError && <div className="error-message">{heightMultiplierError}</div>}
                 </div>
             </div>
 
@@ -359,7 +426,7 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
                 <button
                     className="apply-filters-btn"
                     onClick={applyFilters}
-                    disabled={!!h3Error}
+                    disabled={!!h3Error || !!heightMultiplierError}
                 >
                     Apply Filters
                 </button>

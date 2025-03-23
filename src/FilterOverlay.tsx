@@ -439,7 +439,6 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
                             bearing:60, // Rotation angle in degrees
                             pitch: 60, // Tilt angle in degrees
                             duration: 3000, // Duration in milliseconds (2 seconds)
-                            easing: (t: number) =>  {return t; },
                         });
                     }}
                 >
@@ -454,7 +453,6 @@ const FilterOverlay: React.FC<FilterOverlayProps> = ({
                             bearing:120.1, // Rotation angle in degrees
                             pitch: 60, // Tilt angle in degrees
                             duration: 3000, // Duration in milliseconds (2 seconds)
-                            easing: (t: number) =>  {return t; },
                         });
                     }}
                 >

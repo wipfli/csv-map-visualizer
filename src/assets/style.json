@@ -930,8 +930,15 @@
                 "building_part"
             ],
             "paint": {
-                "fill-color": "#efefef",
-                "fill-opacity": 0.5
+                "fill-color": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    15,
+                    "#efefef",
+                    17,
+                    "#ababab"
+                ]
             }
         },
         {
@@ -4019,7 +4026,13 @@
                 "text-size": 12
             },
             "paint": {
-                "text-color": "#adadad",
+                "text-color": [
+                    "step",
+                    ["zoom"],
+                    "#999999",
+                    16,
+                    "#000000"
+                ],
                 "text-halo-color": "#ffffff",
                 "text-halo-width": 1
             }
@@ -7632,7 +7645,13 @@
                 "text-size": 12
             },
             "paint": {
-                "text-color": "#999999",
+                "text-color": [
+                    "step",
+                    ["zoom"],
+                    "#999999",
+                    14,
+                    "#000000"
+                ],
                 "text-halo-color": "#ffffff",
                 "text-halo-width": 1
             }

@@ -1417,7 +1417,7 @@
                     11,
                     "#ebebeb",
                     16,
-                    "#f5f5f5"
+                    "#bababa"
                 ],
                 "line-width": [
                     "interpolate",
@@ -1517,7 +1517,15 @@
                 ]
             ],
             "paint": {
-                "line-color": "#ebebeb",
+                "line-color": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    13,
+                    "#ebebeb",
+                    15,
+                    "#bababa"
+                ],
                 "line-width": [
                     "interpolate",
                     [
@@ -1624,7 +1632,15 @@
                 ]
             ],
             "paint": {
-                "line-color": "#ebebeb",
+                "line-color": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    12,
+                    "#ebebeb",
+                    14,
+                    "#bababa"
+                ],
                 "line-width": [
                     "interpolate",
                     [
@@ -1662,8 +1678,15 @@
                     0.3,
                     0.75
                 ],
-                "line-opacity": 0.5,
-                "line-color": "#d6d6d6",
+                "line-color": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    12,
+                    "#ebebeb",
+                    14,
+                    "#bababa"
+                ],
                 "line-width": [
                     "interpolate",
                     [
